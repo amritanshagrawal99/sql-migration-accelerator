@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sql-migration-accelerator"
+version = "0.1.0"
+description = "Convert legacy warehouse SQL (Teradata first) to Snowflake/Databricks and reconcile migrated data."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Amritansh Agrawal" }]
+requires-python = ">=3.10"
+dependencies = ["sqlglot>=30,<31"]
+keywords = ["sql", "migration", "teradata", "snowflake", "databricks", "data-engineering", "sqlglot"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Database",
+]
+
+[project.optional-dependencies]
+duckdb = ["duckdb>=1.0"]
+dev = ["pytest>=8", "ruff>=0.5", "duckdb>=1.0"]
+
+[project.scripts]
+sma = "sma.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sma"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
