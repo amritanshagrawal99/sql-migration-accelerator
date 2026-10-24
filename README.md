@@ -91,6 +91,30 @@ flowchart LR
 
 The full list of rules is in [docs/rules.md](docs/rules.md).
 
+## Finding the rows that differ
+
+When `reconcile` reports a mismatch, `diff` finds exactly which rows and columns differ:
+
+```bash
+sma diff --source-url duckdb:///legacy.db --source-table fact_sales --target-url duckdb:///cloud.db --key sale_id
+```
+
+```
+DIFF   1000000 source rows vs 1000000 target rows; 3/256 buckets differ
+       changed=3
+  ~ (17)  amt: '4.25' -> '-1'
+  ~ (500000)  amt: '125000' -> '-1'
+  ~ (999999)  amt: '249999.75' -> '-1'
+```
+
+The diff makes two passes, so memory stays bounded:
+1. Both sides are streamed once, and each row's hash is added to one of 256 buckets chosen by hashing its key.
+2. Only rows in buckets whose fingerprints disagree are re-read and compared key by key.
+
+The output reports missing rows, extra rows, duplicate keys and changed rows. Changed rows include column-level before and after
+values, after normalisation, so type differences between engines don't show up as changes. Composite keys are supported:
+`--key store_id,day`.
+
 ## Python API
 
 ```python
