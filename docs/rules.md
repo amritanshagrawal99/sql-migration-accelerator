@@ -24,6 +24,9 @@ Severity: **info** = semantics preserved, **warning** = converted but behaviour 
 | TD016 | info | `CREATE TABLE b AS a WITH NO DATA` | `CREATE TABLE b LIKE a` | sqlglot emits invalid `CREATE TABLE b AS a` |
 | TD017 | info | `CREATE TABLE b AS a WITH DATA` | `CREATE TABLE b AS SELECT * FROM a` | Same as above |
 | TD018 | error | fractional `SAMPLE` over a join | manual review | No direct equivalent |
+| TD019 | info | `EXEC macro(args)` | `CALL macro(args)` | Snowflake target; other targets go to review |
+| TD020 | info | `REPLACE MACRO m (params) AS ( stmts; )` | Snowflake Scripting `CREATE OR REPLACE PROCEDURE ... LANGUAGE SQL` | Every body statement is converted by the normal rules; `:param` bindings carry over; a macro ending in SELECT `RETURNS TABLE()` |
+| TD021 | error | macro on a non-Snowflake target, or a body statement needing review | manual review | |
 
 ## Engine-level
 

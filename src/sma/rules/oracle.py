@@ -16,7 +16,7 @@ _CONNECT_BY_OK = {"snowflake", "oracle"}
 _MERGE_DELETE = re.compile(r"^\s*MERGE\b.*\bWHEN\s+MATCHED\s+THEN\s+UPDATE\b.*\bDELETE\s+WHERE\b", re.I | re.S)
 
 
-def text_rules(sql: str) -> TextResult:
+def text_rules(sql: str, target: str = "snowflake") -> TextResult:
     if _MERGE_DELETE.match(sql):
         # sqlglot cannot parse it, and the semantics (delete is evaluated on the *updated* row) need a human.
         return TextResult(sql, [Issue("OR003", Severity.ERROR,

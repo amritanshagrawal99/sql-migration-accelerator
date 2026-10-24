@@ -179,7 +179,7 @@ pytest && ruff check src tests
 
 See the [issues](https://github.com/amritanshagrawal99/sql-migration-accelerator/issues). Highlights:
 - Run the pushdown SQL against live Snowflake / Databricks in CI (needs credentials)
-- Teradata macros and stored procedures → Snowflake Scripting
+- Teradata stored procedures (SPL) → Snowflake Scripting (macros are done)
 - Column-level diff to locate the exact mismatching rows
 - More source dialects (Netezza, Redshift)
 

@@ -16,9 +16,10 @@ class TextResult:
     drop: bool = False               # statement is a no-op on the target
     parse_with_target: bool = False  # text was rewritten into target syntax
     manual: bool = False             # known to need a human rewrite; skip parsing
+    final_sql: str | None = None     # already converted to the target (e.g. a whole procedure); skip parsing
 
 
-TextRule = Callable[[str], TextResult]
+TextRule = Callable[[str, str], TextResult]
 AstRule = Callable[[exp.Expression, str], "list[Issue] | tuple[list[Issue], exp.Expression]"]
 
 

@@ -17,12 +17,16 @@ def convert_statement(sql: str, source: str, target: str, index: int = 0, line: 
     read = source
 
     if text_rule:
-        tr = text_rule(sql)
+        tr = text_rule(sql, target)
         issues += tr.issues
         if tr.drop:
             return StatementResult(index, line, sql, None, Status.DROPPED, issues)
         if tr.manual:
             return StatementResult(index, line, sql, None, Status.MANUAL_REVIEW, issues)
+        if tr.final_sql is not None:
+            warned = any(i.severity is Severity.WARNING for i in issues)
+            return StatementResult(index, line, sql, tr.final_sql,
+                                   Status.CONVERTED_WITH_WARNINGS if warned else Status.CONVERTED, issues)
         if tr.parse_with_target:
             read = target
         work = tr.sql
