@@ -32,3 +32,17 @@ Severity: **info** = semantics preserved, **warning** = converted but behaviour 
 | SMA001 | error | Statement could not be parsed |
 | SMA002 | error | Statement parsed only as an opaque command (unsupported syntax) |
 | SMA003 | error | Target dialect can't express the statement |
+
+## Oracle
+
+| Code | Severity | Oracle construct | Converted to | Why |
+|---|---|---|---|---|
+| OR001 | info / warning | `WHERE ROWNUM <= n` (also `< n`, `= 1`, `n >= ROWNUM`) | `LIMIT n` | sqlglot passes `ROWNUM` through. It's a warning when the query has `ORDER BY`, because Oracle applies `ROWNUM` *before* sorting |
+| OR002 | info / error | `a.x = b.y(+)` outer join | ANSI `LEFT JOIN` | Kept as-is on Snowflake, which supports `(+)`; rewritten for other targets |
+| OR003 | error | `MERGE ... UPDATE ... DELETE WHERE` | manual review, with rewrite guidance | sqlglot can't parse it, and `DELETE WHERE` is evaluated on the *updated* row |
+| OR004 | info | `TABLESPACE`, `PCTFREE`, `NOLOGGING`, ... | removed | Physical storage options |
+| OR005 | error | `CONNECT BY` on targets without it | manual review | Native on Snowflake; other targets need a recursive CTE |
+| OR006 | error | `ROWNUM` outside a simple top-N filter | manual review | Needs `ROW_NUMBER() OVER (...)` |
+
+sqlglot already handles `NVL`, `NVL2`, `DECODE`, `INSTR`, `SUBSTR`, `SYSDATE`, `TO_DATE`, `VARCHAR2` / `NUMBER` / `CLOB`, `LISTAGG`,
+`FETCH FIRST` and multi-table `INSERT ALL`.

@@ -21,6 +21,8 @@ def convert_statement(sql: str, source: str, target: str, index: int = 0, line: 
         issues += tr.issues
         if tr.drop:
             return StatementResult(index, line, sql, None, Status.DROPPED, issues)
+        if tr.manual:
+            return StatementResult(index, line, sql, None, Status.MANUAL_REVIEW, issues)
         if tr.parse_with_target:
             read = target
         work = tr.sql
