@@ -21,3 +21,14 @@ jobs:
       - run: pytest -q
       - name: Convert examples (strict)
         run: sma convert examples/teradata -o converted --strict
+
+  dbt-e2e:
+    # The generated dbt project must be accepted by real dbt.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]" dbt-duckdb
+      - run: pytest -q tests/test_dbt_export.py -rs
