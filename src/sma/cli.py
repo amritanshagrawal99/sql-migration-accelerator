@@ -1,4 +1,4 @@
-"""Command line entry point: `sma convert ...` and `sma reconcile ...`."""
+"""Command line entry point: `sma convert ...`, `sma reconcile ...` and `sma diff ...`."""
 from __future__ import annotations
 
 import argparse
@@ -7,6 +7,7 @@ from pathlib import Path
 
 from . import __version__
 from .converter import convert_path
+from .diff import describe, diff_tables
 from .models import Status
 from .reconcile import NormaliseOptions, reconcile
 from .report import summary, to_json, to_markdown
@@ -54,6 +55,15 @@ def cmd_reconcile(a: argparse.Namespace) -> int:
     return 0 if res.match else 1
 
 
+def cmd_diff(a: argparse.Namespace) -> int:
+    opts = NormaliseOptions(float_digits=a.float_digits, rstrip_strings=not a.keep_trailing_spaces)
+    res = diff_tables(_connect(a.source_url), a.source_table, _connect(a.target_url), a.target_table or a.source_table,
+                      key=a.key.split(","), columns=a.columns.split(",") if a.columns else None, opts=opts,
+                      buckets=a.buckets, max_diffs=a.max_diffs)
+    print(describe(res, limit=a.show))
+    return 0 if res.match else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="sma", description="SQL migration accelerator: convert legacy SQL and reconcile data.")
     p.add_argument("--version", action="version", version=f"sma {__version__}")
@@ -68,14 +78,22 @@ def main(argv: list[str] | None = None) -> int:
     c.set_defaults(func=cmd_convert)
 
     r = sub.add_parser("reconcile", help="compare a source table with its migrated copy")
-    r.add_argument("--source-url", required=True)
-    r.add_argument("--source-table", required=True)
-    r.add_argument("--target-url", required=True)
-    r.add_argument("--target-table")
-    r.add_argument("--columns", help="comma-separated column list (default: shared columns)")
-    r.add_argument("--float-digits", type=int, default=6)
-    r.add_argument("--keep-trailing-spaces", action="store_true")
+    d = sub.add_parser("diff", help="list the exact rows and columns that differ (needs a key)")
+
+    for sp in (r, d):
+        sp.add_argument("--source-url", required=True)
+        sp.add_argument("--source-table", required=True)
+        sp.add_argument("--target-url", required=True)
+        sp.add_argument("--target-table")
+        sp.add_argument("--columns", help="comma-separated column list (default: shared columns)")
+        sp.add_argument("--float-digits", type=int, default=6)
+        sp.add_argument("--keep-trailing-spaces", action="store_true")
     r.set_defaults(func=cmd_reconcile)
+    d.add_argument("--key", required=True, help="comma-separated key column(s)")
+    d.add_argument("--buckets", type=int, default=256)
+    d.add_argument("--max-diffs", type=int, default=1000)
+    d.add_argument("--show", type=int, default=20, help="how many differing rows to print")
+    d.set_defaults(func=cmd_diff)
 
     a = p.parse_args(argv)
     return a.func(a)
