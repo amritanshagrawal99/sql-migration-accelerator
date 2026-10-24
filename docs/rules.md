@@ -46,3 +46,18 @@ Severity: **info** = semantics preserved, **warning** = converted but behaviour 
 
 sqlglot already handles `NVL`, `NVL2`, `DECODE`, `INSTR`, `SUBSTR`, `SYSDATE`, `TO_DATE`, `VARCHAR2` / `NUMBER` / `CLOB`, `LISTAGG`,
 `FETCH FIRST` and multi-table `INSERT ALL`.
+
+## SQL Server (T-SQL)
+
+| Code | Severity | T-SQL construct | Converted to | Why |
+|---|---|---|---|---|
+| TS001 | error | `MERGE ... WHEN NOT MATCHED BY SOURCE` on Snowflake | MERGE without that clause, plus instructions for a separate `DELETE ... WHERE NOT EXISTS` | sqlglot silently turns it into `WHEN NOT MATCHED THEN DELETE`, a different and invalid statement. Kept natively for Databricks |
+| TS002 | info / warning | `UPDATE alias SET ... FROM t alias JOIN s ON ...` | Snowflake: `UPDATE t AS alias SET ... FROM s WHERE ...`; Databricks: `MERGE INTO ... WHEN MATCHED THEN UPDATE` | It's a warning for MERGE, which fails on duplicate source matches where SQL Server picked one silently. Outer or multiple joins go to review |
+| TS003 | info | `DELETE alias FROM t alias JOIN s ON ...` | `DELETE FROM t AS alias WHERE EXISTS (SELECT 1 FROM s WHERE ...)` | Valid on both targets |
+| TS004 | info | `ON [PRIMARY]` filegroup | removed | It leaks into the output otherwise |
+| TS005 | error | `EXEC proc` | manual review | Port the procedure and `CALL` it |
+| TS006 | error | `DECLARE @v`, `SET @v`, `IF`, `WHILE`, `TRY/CATCH` | manual review | Needs a scripting block on the target |
+| TS007 | info | `WITH (NOLOCK)` | removed (noted) | Snapshot reads on the target |
+| TS008 | info | `#temp` tables | session temporary tables | The `#` prefix is dropped |
+| TS010 | info | `GO`, `SET NOCOUNT ON` and other session settings, `PRINT` | dropped | `GO` lines also split batches, like semicolons |
+| TS011 | info | `IF OBJECT_ID('x') IS NOT NULL DROP TABLE x` | `DROP TABLE IF EXISTS x` | |

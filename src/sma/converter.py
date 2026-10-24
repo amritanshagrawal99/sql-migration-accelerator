@@ -41,7 +41,10 @@ def convert_statement(sql: str, source: str, target: str, index: int = 0, line: 
         return StatementResult(index, line, sql, None, Status.MANUAL_REVIEW, issues)
 
     if ast_rule:
-        issues += ast_rule(tree, target)
+        res = ast_rule(tree, target)
+        if isinstance(res, tuple):  # a rule may replace the whole statement
+            res, tree = res
+        issues += res
 
     try:
         out = tree.sql(dialect=target, unsupported_level=ErrorLevel.RAISE, pretty=True)
