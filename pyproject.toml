@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sql-migration-accelerator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Convert legacy warehouse SQL (Teradata first) to Snowflake/Databricks and reconcile migrated data."
 readme = "README.md"
 license = { text = "MIT" }
