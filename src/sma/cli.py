@@ -48,6 +48,13 @@ def cmd_convert(a: argparse.Namespace) -> int:
 
 
 def cmd_reconcile(a: argparse.Namespace) -> int:
+    if a.pushdown:
+        from .pushdown import reconcile_pushdown
+        dialect = lambda url: url.partition(":///")[0]  # noqa: E731 - duckdb:/// -> duckdb
+        res = reconcile_pushdown(_connect(a.source_url), a.source_table, dialect(a.source_url),
+                                 _connect(a.target_url), a.target_table or a.source_table, dialect(a.target_url))
+        print(res.describe())
+        return 0 if res.match else 1
     opts = NormaliseOptions(float_digits=a.float_digits, rstrip_strings=not a.keep_trailing_spaces)
     res = reconcile(_connect(a.source_url), a.source_table, _connect(a.target_url), a.target_table or a.source_table,
                     columns=a.columns.split(",") if a.columns else None, opts=opts)
@@ -88,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("--columns", help="comma-separated column list (default: shared columns)")
         sp.add_argument("--float-digits", type=int, default=6)
         sp.add_argument("--keep-trailing-spaces", action="store_true")
+    r.add_argument("--pushdown", action="store_true", help="compute fingerprints inside each database (see sma.pushdown)")
     r.set_defaults(func=cmd_reconcile)
     d.add_argument("--key", required=True, help="comma-separated key column(s)")
     d.add_argument("--buckets", type=int, default=256)

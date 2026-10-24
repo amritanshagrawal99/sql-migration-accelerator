@@ -94,6 +94,23 @@ flowchart LR
 
 The full list of rules is in [docs/rules.md](docs/rules.md).
 
+## Reconciling inside the database
+
+```bash
+sma reconcile --source-url duckdb:///legacy.db --source-table fact_sales --target-url duckdb:///cloud.db --pushdown
+```
+
+`--pushdown` (or `sma.pushdown.reconcile_pushdown()` with any DB-API connection) computes the fingerprint in each engine. It
+generates one query per side, and only a single row of aggregates crosses the network. On 1M rows in DuckDB it takes 0.6 s,
+against 15.7 s when streaming rows to Python.
+
+The fingerprints are **comparable across engines**. Each engine renders values into the same canonical text: numbers as
+`DECIMAL(38,6)` text, right-trimmed strings, ISO dates and microsecond timestamps, `N`/`V` null markers. The hash is the
+first 15 hex digits of `MD5(row)`, summed. Templates exist for DuckDB, Snowflake, Databricks/Spark and Postgres.
+[`reference_fingerprint`](src/sma/pushdown.py) is the Python specification. The DuckDB SQL is tested to match it exactly,
+including duplicates, NULLs and type differences such as `INTEGER` vs `DECIMAL` and `CHAR` padding. The Snowflake,
+Databricks and Postgres SQL is checked to parse in each dialect, but **has not yet been run against live warehouses**.
+
 ## Finding the rows that differ
 
 When `reconcile` reports a mismatch, `diff` finds exactly which rows and columns differ:
@@ -142,7 +159,7 @@ pytest && ruff check src tests
 ## Roadmap
 
 See the [issues](https://github.com/amritanshagrawal99/sql-migration-accelerator/issues). Highlights:
-- Push the reconciliation hash down into the database (no data transfer)
+- Run the pushdown SQL against live Snowflake / Databricks in CI (needs credentials)
 - Teradata macros and stored procedures → Snowflake Scripting
 - Column-level diff to locate the exact mismatching rows
 - More source dialects (Netezza, Redshift)
