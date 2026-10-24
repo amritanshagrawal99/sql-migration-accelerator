@@ -38,6 +38,12 @@ def cmd_convert(a: argparse.Namespace) -> int:
     (out / "migration_report.json").write_text(to_json(results), encoding="utf-8")
     s = summary(results)
     print(f"{s['statements']} statements in {s['files']} files -> {out}")
+    if a.dbt:
+        from .dbt_export import collect, write
+        export = collect(results, a.source, a.target)
+        write(export, Path(a.dbt), a.target)
+        print(f"dbt: {len(export.models)} models, {sum(len(t) for t in export.sources.values())} sources -> {a.dbt} "
+              f"({len(export.skipped)} statements stay as scripts)")
     for k, v in s["by_status"].items():
         print(f"  {k:<24}{v}")
     print(f"  automation rate         {s['automation_rate']:.0%}")
@@ -82,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("-s", "--source", default="teradata", help=f"source dialect (rules: {', '.join(supported_sources())})")
     c.add_argument("-t", "--target", default="snowflake", help="target dialect, e.g. snowflake, databricks, bigquery")
     c.add_argument("--strict", action="store_true", help="exit 1 if any statement needs manual review (for CI)")
+    c.add_argument("--dbt", metavar="DIR", help="also write CTAS / CREATE VIEW statements as dbt models into DIR")
     c.set_defaults(func=cmd_convert)
 
     r = sub.add_parser("reconcile", help="compare a source table with its migrated copy")

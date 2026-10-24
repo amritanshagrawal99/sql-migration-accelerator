@@ -94,6 +94,25 @@ flowchart LR
 
 The full list of rules is in [docs/rules.md](docs/rules.md).
 
+## Landing in dbt
+
+```bash
+sma convert legacy_sql/ -o converted --dbt migrated_dbt/
+```
+
+Every converted `CREATE TABLE ... AS SELECT` or `CREATE VIEW ... AS` becomes a dbt model:
+
+| Legacy | dbt |
+|---|---|
+| CTAS / view | `models/<name>.sql` with `materialized='table'` / `'view'` |
+| `VOLATILE` / `TEMPORARY` table | `materialized='ephemeral'` |
+| Reference to another converted table | `{{ ref('name') }}` |
+| Reference to anything else | `{{ source('schema', 'table') }}` plus `sources.yml` |
+| Teradata `UNIQUE PRIMARY INDEX` | `unique` + `not_null` tests in `schema.yml`; the target won't enforce it, so the tests do |
+
+DML (INSERT/UPDATE/MERGE) and plain DDL stay in the converted scripts, and the summary says how many. CI runs real dbt (`dbt ls`)
+on the generated project from [examples/teradata_dbt](examples/teradata_dbt).
+
 ## Reconciling inside the database
 
 ```bash
