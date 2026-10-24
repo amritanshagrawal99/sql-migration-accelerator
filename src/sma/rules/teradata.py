@@ -11,6 +11,7 @@ import re
 
 from sqlglot import exp
 
+from ..macros import convert_exec, convert_macro
 from ..models import Issue, Severity
 from . import TextResult
 
@@ -27,8 +28,23 @@ _UPDATE_FROM = re.compile(
 )
 
 
-def text_rules(sql: str) -> TextResult:
+def text_rules(sql: str, target: str = "snowflake") -> TextResult:
     issues: list[Issue] = []
+
+    macro = convert_macro(sql, target)
+    if macro is not None:
+        proc, macro_issues = macro
+        if proc is None:
+            return TextResult(sql, macro_issues, manual=True)
+        return TextResult(sql, macro_issues, final_sql=proc)
+    call = convert_exec(sql)
+    if call is not None:
+        if target != "snowflake":
+            return TextResult(sql, [Issue("TD021", Severity.ERROR, f"EXEC of a Teradata macro: port the macro for {target} first.")],
+                              manual=True)
+        # sqlglot only parses CALL as an opaque command, and it is valid Snowflake as written.
+        return TextResult(sql, [Issue("TD019", Severity.INFO, "EXEC macro rewritten as CALL of the converted procedure.")],
+                          final_sql=call)
 
     m = _LOCKING.match(sql)
     if m:

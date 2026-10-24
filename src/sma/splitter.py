@@ -32,7 +32,18 @@ def split_statements(text: str, dialect: str) -> list[RawStatement]:
         text = _GO_LINE.sub(lambda m: m.group(1) + ";" + " " * (len(m.group(2)) - 1), text)
     try:
         tokens = sqlglot.Dialect.get_or_raise(dialect).tokenize(text)
-        cuts = [t.start for t in tokens if t.token_type == TokenType.SEMICOLON]
+        # Only top-level semicolons end a statement: a Teradata macro body is a parenthesised list of statements.
+        cuts, depth = [], 0
+        for t in tokens:
+            if t.token_type == TokenType.L_PAREN:
+                depth += 1
+            elif t.token_type == TokenType.R_PAREN:
+                depth = max(0, depth - 1)
+            elif t.token_type == TokenType.SEMICOLON and depth == 0:
+                cuts.append(t.start)
+        if depth:
+            # Unbalanced parentheses (a broken statement): don't let it swallow the rest of the file.
+            cuts = [t.start for t in tokens if t.token_type == TokenType.SEMICOLON]
     except Exception:
         cuts = [i for i, ch in enumerate(text) if ch == ";"]
 

@@ -20,7 +20,7 @@ _NOLOCK = re.compile(r"WITH\s*\(\s*NOLOCK\s*\)", re.I)
 _NATIVE_BY_SOURCE = {"databricks", "spark", "bigquery", "tsql", "postgres"}
 
 
-def text_rules(sql: str) -> TextResult:
+def text_rules(sql: str, target: str = "snowflake") -> TextResult:
     issues: list[Issue] = []
     if _SESSION.match(sql):
         return TextResult(sql, [Issue("TS010", Severity.INFO,
