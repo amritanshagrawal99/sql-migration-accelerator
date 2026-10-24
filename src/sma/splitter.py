@@ -1,10 +1,13 @@
 """Split a SQL script into statements without breaking on semicolons inside strings or comments."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import sqlglot
 from sqlglot.tokens import TokenType
+
+_GO_LINE = re.compile(r"^([ 	]*)(GO)[ 	]*$", re.I | re.M)
 
 
 @dataclass
@@ -23,6 +26,10 @@ def split_statements(text: str, dialect: str) -> list[RawStatement]:
     Falls back to a naive split if the script cannot be tokenized (e.g. stray
     unterminated quotes), so one bad statement never hides the rest of a file.
     """
+    if dialect.lower() == "tsql":
+        # GO on its own line is a client-side batch separator, not SQL: treat it as a statement boundary.
+        # Same length replacement keeps every offset (and so every line number) unchanged.
+        text = _GO_LINE.sub(lambda m: m.group(1) + ";" + " " * (len(m.group(2)) - 1), text)
     try:
         tokens = sqlglot.Dialect.get_or_raise(dialect).tokenize(text)
         cuts = [t.start for t in tokens if t.token_type == TokenType.SEMICOLON]

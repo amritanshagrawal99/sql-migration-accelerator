@@ -19,12 +19,13 @@ class TextResult:
 
 
 TextRule = Callable[[str], TextResult]
-AstRule = Callable[[exp.Expression, str], list[Issue]]
+AstRule = Callable[[exp.Expression, str], "list[Issue] | tuple[list[Issue], exp.Expression]"]
 
 
 def _registry() -> dict[str, tuple[TextRule, AstRule]]:
-    from . import oracle, teradata
-    return {"teradata": (teradata.text_rules, teradata.ast_rules), "oracle": (oracle.text_rules, oracle.ast_rules)}
+    from . import oracle, teradata, tsql
+    return {"teradata": (teradata.text_rules, teradata.ast_rules), "oracle": (oracle.text_rules, oracle.ast_rules),
+            "tsql": (tsql.text_rules, tsql.ast_rules)}
 
 
 def rules_for(source: str) -> tuple[TextRule | None, AstRule | None]:

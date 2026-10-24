@@ -5,7 +5,7 @@
 
 Convert legacy warehouse SQL to a cloud warehouse **and prove the migrated data matches**.
 
-Source dialects with migration rules: **Teradata** and **Oracle**. Targets: Snowflake, Databricks, BigQuery and anything sqlglot
+Source dialects with migration rules: **Teradata**, **Oracle** and **SQL Server (T-SQL)**. Targets: Snowflake, Databricks, BigQuery and anything sqlglot
 generates.
 
 Warehouse migrations (Teradata → Snowflake / Databricks) usually fail in two places: the long tail of dialect-specific SQL that
@@ -145,7 +145,7 @@ See the [issues](https://github.com/amritanshagrawal99/sql-migration-accelerator
 - Push the reconciliation hash down into the database (no data transfer)
 - Teradata macros and stored procedures → Snowflake Scripting
 - Column-level diff to locate the exact mismatching rows
-- More source dialects (SQL Server / T-SQL next)
+- More source dialects (Netezza, Redshift)
 
 ## Acknowledgements
 
